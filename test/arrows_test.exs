@@ -2,10 +2,10 @@ defmodule ArrowsTest do
   use ExUnit.Case
   use Arrows
 
-  defp double(x), do: x * 2
-  defp double_fst(x, _), do: x * 2
-  defp double_snd(_, x), do: x * 2
-  defp add_snd_thd(_, x, y), do: x + y
+  def double(x), do: x * 2
+  def double_fst(x, _), do: x * 2
+  def double_snd(_, x), do: x * 2
+  def add_snd_thd(_, x, y), do: x + y
 
   test "|>" do
     assert 4 == (2 |> double)
@@ -20,6 +20,18 @@ defmodule ArrowsTest do
     assert 3 == (2 |> add_snd_thd(1, ..., 1))
     assert 4 == (2 |> add_snd_thd(1, ..., ...))
     assert 6 == (2 |> add_snd_thd(1, ..., double(...)))
+    assert 4 == (2 |> ArrowsTest.double)
+    assert 4 == (2 |> ArrowsTest.double())
+    assert 4 == (2 |> ArrowsTest.double(...))
+    assert 8 == (2 |> ArrowsTest.double(double(...)))
+    assert 4 == (2 |> ArrowsTest.double_fst(1))
+    assert 4 == (2 |> ArrowsTest.double_fst(..., 1))
+    assert 8 == (2 |> ArrowsTest.double_fst(double(...), 1))
+    assert 4 == (2 |> ArrowsTest.double_snd(1, ...))
+    assert 8 == (2 |> ArrowsTest.double_snd(1, double(...)))
+    assert 3 == (2 |> ArrowsTest.add_snd_thd(1, ..., 1))
+    assert 4 == (2 |> ArrowsTest.add_snd_thd(1, ..., ...))
+    assert 6 == (2 |> ArrowsTest.add_snd_thd(1, ..., double(...)))
   end
 
   test ">>>" do

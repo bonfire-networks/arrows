@@ -3,14 +3,14 @@ defmodule Arrows do
   A handful of (mostly) arrow macros with superpowers.
   """
 
-  defmacro __using__(_foptions) do
+  defmacro __using__(_options) do
     quote do
       import Kernel, except: [|>: 2]
       import unquote(__MODULE__),
         only: [|>: 2, >>>: 2, <|>: 2,
                <<<: 2, <~: 2, <<~: 2,
                ~>: 2, ~>>: 2, <~>: 2,
-              ]
+              ok: 1, to_ok: 1, from_ok: 1]
     end
   end
 
@@ -98,5 +98,29 @@ defmodule Arrows do
 
   @doc "Like `||`, except with the logic applied by `~>`"
   defmacro l <~> r, do: join(:ok, l, r)
+
+  def to_ok(x) do
+    case x do
+      {:ok, _} -> x
+      {:error, _} -> x
+      :error -> x
+      nil -> :error
+      x -> {:ok, x}
+    end
+  end
+
+  def from_ok(x) do
+    case x do
+      {:ok, x} -> x
+      {:error, _} -> nil
+      :error -> nil
+      x -> x # lenience
+    end
+  end
+
+  def ok(x={:ok, _}), do: x
+  def ok(x={:error, _}), do: x
+  def ok(:error), do: :error
+  def ok(x), do: {:ok, x}
 
 end
