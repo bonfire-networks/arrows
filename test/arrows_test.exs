@@ -32,6 +32,9 @@ defmodule ArrowsTest do
     assert 3 == (2 |> ArrowsTest.add_snd_thd(1, ..., 1))
     assert 4 == (2 |> ArrowsTest.add_snd_thd(1, ..., ...))
     assert 6 == (2 |> ArrowsTest.add_snd_thd(1, ..., double(...)))
+    for x <- [:yes, 2, nil, false] do
+      assert {:ok, x} == (x |> {:ok, ...})
+    end
   end
 
   test ">>>" do
@@ -124,6 +127,13 @@ defmodule ArrowsTest do
       assert thing == (thing ~> add_snd_thd(1, ..., ...))
       assert thing == (thing ~> add_snd_thd(1, ..., double(...)))
     end
+
+    for x <- [:yes, 2, true] do
+      assert {:ok, x} == (x ~> {:ok, ...})
+      assert {:error, x} == ({:error, x} ~> {:ok, ...})
+    end
+    assert nil == (nil ~> {:ok, ...})
+
   end
 
   test "<~" do

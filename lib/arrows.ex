@@ -16,14 +16,17 @@ defmodule Arrows do
 
   import Kernel, except: [|>: 2]
 
-  defp pipe_args(where, l, args) do
-    r = Macro.prewalk(args, 0, fn form, acc ->
+  defp ellipsis(l, arg) do
+    Macro.prewalk(arg, 0, fn form, acc ->
       case form do
         {:..., _, c} when not is_list(c) -> {l, acc+1}
         _ -> {form, acc}
       end
     end)
-    case r do
+  end
+
+  defp pipe_args(where, l, args) do
+    case ellipsis(l, args) do
       {args, 0} when where == :first -> [l | args]
       {args, 0} when where == :last -> args ++ [l]
       {args, _} -> args
@@ -31,19 +34,19 @@ defmodule Arrows do
   end
 
   defp pipe(where, kind, l, r) do
+    v = Macro.var(:ret, __MODULE__)
     case r do
       {name, meta, args} ->
         args = if(is_list(args), do: args, else: [])
-        v = Macro.var(:ret, __MODULE__)
         continue = {name, meta, pipe_args(where, v, args)}
         case kind do
           :normal ->
-            quote do
+            quote [generated: true] do
               unquote(v) = unquote(l)
               unquote(continue)
             end
           :ok ->
-            quote do
+            quote [generated: true] do
               case unquote(l) do
                 nil -> nil
                 :error -> :error
@@ -54,7 +57,27 @@ defmodule Arrows do
             end
         end
       _ ->
-        raise RuntimeError, message: "Can't pipe into #{inspect(r)}"
+        case ellipsis(l, r) do
+          {arg, 0} -> raise RuntimeError, message: "Can't pipe into #{inspect(r)}: missing ellipsis(`...`) in #{inspect(arg)}"
+          {continue, _} ->
+            case kind do
+              :normal ->
+                quote [generated: true] do
+                  unquote(v) = unquote(l)
+                  unquote(continue)
+                end
+              :ok ->
+                quote [generated: true] do
+                  case unquote(l) do
+                    nil -> nil
+                    :error -> :error
+                    {:error, _} = unquote(v) -> unquote(v)
+                    {:ok, unquote(v)} -> unquote(continue)
+                    unquote(v) -> unquote(continue)
+                  end
+                end
+            end
+        end
     end
   end
 
@@ -122,5 +145,11 @@ defmodule Arrows do
   def ok(x={:error, _}), do: x
   def ok(:error), do: :error
   def ok(x), do: {:ok, x}
+
+  def ok_or(x={:ok, _}, _), do: x
+  def ok_or(x={:error, _}, _), do: x
+  def ok_or(:error, _), do: :error
+  def ok_or(nil, err), do: {:error, err}
+  def ok_or(ok, _), do: {:ok, ok}
 
 end
