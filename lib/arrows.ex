@@ -7,10 +7,10 @@ defmodule Arrows do
     quote do
       import Kernel, except: [|>: 2]
       import unquote(__MODULE__),
-        only: [|>: 2, >>>: 2, <|>: 2,
-               <<<: 2, <~: 2, <<~: 2,
-               ~>: 2, ~>>: 2, <~>: 2,
-              ok: 1, to_ok: 1, from_ok: 1]
+        only: [
+          |>: 2, <|>: 2, ~>: 2, <~>: 2,
+          ok: 1, to_ok: 1, from_ok: 1
+        ]
     end
   end
 
@@ -28,7 +28,6 @@ defmodule Arrows do
   defp pipe_args(where, l, args) do
     case ellipsis(l, args) do
       {args, 0} when where == :first -> [l | args]
-      {args, 0} when where == :last -> args ++ [l]
       {args, _} -> args
     end
   end
@@ -101,23 +100,23 @@ defmodule Arrows do
     end
   end
 
-  @doc "Like `Magritte.|>`"
+  @doc """
+  A more flexible drop-in replacement for the standard elixir pipe operator.
+
+  Special features are unlocked when using the `...` (ellipsis) on the right hand side:
+
+  * The right hand side need not be a function, it can be any expression containing the ellipsis.
+  * The ellipsis will be replaced with the result of evaluating the hand side expression.
+  * You may use the ellipsis multiple times and the left hand side will be calculated exactly once.
+
+  You can do crazy stuff with the ellipsis, but remember that people have to read it!
+  """
   defmacro l |> r,  do: pipe(:first, :normal, l, r)
-  @doc "Like `|>`, except threads into the *last* argument position."
-  defmacro l >>> r, do: pipe(:last, :normal, l, r)
-  @doc "Like `>>>`, except the argument order is flipped"
-  defmacro l <<< r, do: pipe(:last, :normal, r, l)
   @doc "Like `||`, except only defaults if the left is nil (i.e. false is valid)"
   defmacro l <|> r, do: join(:normal, l, r)
 
   @doc "Like `OK.~>`"
   defmacro l ~> r,  do: pipe(:first, :ok, l, r)
-  @doc "Like `~>`, except the argument order is flipped"
-  defmacro l <~ r,  do: pipe(:first, :ok, r, l)
-  @doc "Like `~>`, except threads into the *last* argument position"
-  defmacro l ~>> r, do: pipe(:last, :ok, l, r)
-  @doc "Like `~>>`, except the argument order is flipped"
-  defmacro l <<~ r, do: pipe(:last, :ok, r, l)
 
   @doc "Like `||`, except with the logic applied by `~>`"
   defmacro l <~> r, do: join(:ok, l, r)
