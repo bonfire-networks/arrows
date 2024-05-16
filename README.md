@@ -1,6 +1,6 @@
 # Arrows
 
-A handful of (mostly) arrow macros.
+A handful of (mostly) arrow macros with superpowers.
 
 ## Installation
 The package can be installed by adding `arrows` to your list of dependencies in `mix.exs`: -->

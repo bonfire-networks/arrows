@@ -1,7 +1,5 @@
 defmodule Arrows do
-  @moduledoc """
-  A handful of (mostly) arrow macros with superpowers.
-  """
+  @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
 
   defmacro __using__(_options) do
     quote do
