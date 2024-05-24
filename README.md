@@ -8,7 +8,7 @@ The package can be installed by adding `arrows` to your list of dependencies in 
 ```elixir
 def deps do
   [
-    {:arrows, "~> 0.1.2"}
+    {:arrows, "~> 0.2.0"}
   ]
 end
 ```

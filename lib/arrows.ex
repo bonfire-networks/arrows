@@ -6,8 +6,13 @@ defmodule Arrows do
       import Kernel, except: [|>: 2]
       import unquote(__MODULE__),
         only: [
-          |>: 2, <|>: 2, ~>: 2, <~>: 2,
-          ok: 1, to_ok: 1, from_ok: 1
+          |>: 2, 
+          |||: 2, 
+          ~>: 2, 
+          <~>: 2,
+          ok: 1, 
+          to_ok: 1, 
+          from_ok: 1
         ]
     end
   end
@@ -17,7 +22,7 @@ defmodule Arrows do
   defp ellipsis(l, arg) do
     Macro.prewalk(arg, 0, fn form, acc ->
       case form do
-        {:..., _, c} when not is_list(c) -> {l, acc+1}
+        {:..., _, ctx} when is_atom(ctx) or ctx == [] -> {l, acc+1}
         _ -> {form, acc}
       end
     end)
@@ -110,8 +115,9 @@ defmodule Arrows do
   You can do crazy stuff with the ellipsis, but remember that people have to read it!
   """
   defmacro l |> r,  do: pipe(:first, :normal, l, r)
-  @doc "Like `||`, except only defaults if the left is nil (i.e. false is valid)"
-  defmacro l <|> r, do: join(:normal, l, r)
+
+  # @doc "Like `||`, except only defaults if the left is nil (i.e. false is valid)"
+  defmacro l ||| r, do: join(:normal, l, r)
 
   @doc "Like `OK.~>`"
   defmacro l ~> r,  do: pipe(:first, :ok, l, r)
