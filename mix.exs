@@ -4,7 +4,7 @@ defmodule Arrows.MixProject do
   def project do
     [
       app: :arrows,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.12",
       description: "A handful of (mostly) arrow macros",
       start_permanent: Mix.env() == :prod,
