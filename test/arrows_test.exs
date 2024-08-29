@@ -319,4 +319,9 @@ defmodule ArrowsTest do
     end
   end
 
+  test "when you use `...` twice within a single pipe, it should pipe the same value twice" do
+    assert true = :rand.uniform()
+    |> Kernel.==(..., ...)
+  end
+
 end
