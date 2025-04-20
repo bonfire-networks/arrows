@@ -29,7 +29,7 @@ defmodule Arrows.MixProject do
     ]
   end
 
-    defp package do
+  defp package do
     [
       name: :arrows,
       files: ~w(lib mix.exs README.md),

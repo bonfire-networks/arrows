@@ -4,5 +4,4 @@ defmodule Arrows.DocTest do
   import Arrows
 
   doctest Arrows
-
 end

@@ -4,14 +4,15 @@ defmodule Arrows do
   defmacro __using__(_options) do
     quote do
       import Kernel, except: [|>: 2]
+
       import unquote(__MODULE__),
         only: [
-          |>: 2, 
-          |||: 2, 
-          ~>: 2, 
+          |>: 2,
+          |||: 2,
+          ~>: 2,
           <~>: 2,
-          ok: 1, 
-          to_ok: 1, 
+          ok: 1,
+          to_ok: 1,
           from_ok: 1
         ]
     end
@@ -21,18 +22,18 @@ defmodule Arrows do
 
   @doc """
   Enhanced pipe operator with support for ellipsis (`...`) placement.
-  
+
   This is a more flexible drop-in replacement for the standard Elixir pipe operator (`|>`).
-  
+
   ## Special Features
-  
+
   * The ellipsis (`...`) will be replaced with the result of evaluating the left-hand side expression.
   * The right-hand side need not be a function; it can be any expression containing the ellipsis (`...`).
   * You may use the ellipsis multiple times, and the left-hand side will be calculated exactly once.
   * If no ellipsis is present, it behaves like the standard pipe operator (placing the value as the first argument).
-  
+
   ## Examples
-  
+
       # Standard first position pipe
       iex> 2 |> Integer.to_string()
       "2"
@@ -58,21 +59,21 @@ defmodule Arrows do
       6
       
   """
-  defmacro l |> r,  do: pipe(:first, :normal, l, r)
+  defmacro l |> r, do: pipe(:first, :normal, l, r)
 
   @doc """
   OK-pipe operator.
-  
+
   Similar to the enhanced pipe (`|>`), but with additional error handling for the following patterns:
-  
+
   - `{:ok, value}` - Extracts `value` and passes it to the right side
   - `{:error, _}` - Passes through unchanged (short-circuits the pipeline)
   - `:error` - Passes through unchanged (short-circuits the pipeline)
   - `nil` - Passes through unchanged (short-circuits the pipeline)
   - Any other value - Passes the value directly to the right side
-  
+
   ## Examples
-  
+
       iex> 2 ~> Integer.to_string()
       "2"
       
@@ -99,15 +100,15 @@ defmodule Arrows do
       iex> 2 ~> Kernel./(3, ...)
       1.5
   """
-  defmacro l ~> r,  do: pipe(:first, :ok, l, r)
+  defmacro l ~> r, do: pipe(:first, :ok, l, r)
 
   @doc """
   Nil-coalescing "or" operator.
-  
+
   Works like the logical OR (`||`), except it only defaults to the right side if the left side is `nil` (whereas `||` also defaults on `false` and other falsy values).
-  
+
   ## Examples
-  
+
       iex> nil ||| "default"
       "default"
       
@@ -124,16 +125,16 @@ defmodule Arrows do
 
   @doc """
   Error-coalescing operator.
-  
+
   Similar to the nil-coalescing operator (`|||`), but applies a similar logic of the OK-pipe (`~>`).
 
   It return the right side value if the left side is:
   - `nil`
   - `:error`
   - `{:error, _}`
-  
+
   ## Examples
-  
+
       iex> nil <~> "default"
       "default"
       
@@ -156,14 +157,14 @@ defmodule Arrows do
 
   @doc """
   Converts various values to an OK tuple format.
-  
+
   - `{:ok, value}` and `{:error, reason}` are returned unchanged
   - `:error` is returned unchanged
   - `nil` is converted to `:error`
   - Any other value `x` is converted to `{:ok, x}`
-  
+
   ## Examples
-  
+
       iex> to_ok({:ok, 123})
       {:ok, 123}
       
@@ -191,14 +192,14 @@ defmodule Arrows do
 
   @doc """
   Extracts values from OK tuples.
-  
+
   - `{:ok, value}` returns `value`
   - `{:error, _}` returns `nil`
   - `:error` returns `nil`
   - Any other value is returned unchanged
-  
+
   ## Examples
-  
+
       iex> from_ok({:ok, 123})
       123
       
@@ -216,18 +217,19 @@ defmodule Arrows do
       {:ok, x} -> x
       {:error, _} -> nil
       :error -> nil
-      x -> x # lenience
+      # lenience
+      x -> x
     end
   end
 
   @doc """
   Wraps a value in an OK tuple if it's not already in a result tuple format.
-  
+
   - `{:ok, value}`, `{:error, reason}` and `:error` are returned unchanged
   - Any other value `x` is converted to `{:ok, x}`
-  
+
   ## Examples
-  
+
       iex> ok({:ok, 123})
       {:ok, 123}
       
@@ -240,20 +242,20 @@ defmodule Arrows do
       iex> ok(123)
       {:ok, 123}
   """
-  def ok(x={:ok, _}), do: x
-  def ok(x={:error, _}), do: x
+  def ok(x = {:ok, _}), do: x
+  def ok(x = {:error, _}), do: x
   def ok(:error), do: :error
   def ok(x), do: {:ok, x}
 
   @doc """
   Wraps a value in an OK tuple or returns an error tuple with a default error.
-  
+
   - `{:ok, value}`, `{:error, reason}` and `:error` are returned unchanged
   - `nil` returns `{:error, err}` where `err` is the default error provided in the second argument
   - Any other value `x` returns `{:ok, x}`
-  
+
   ## Examples
-  
+
       iex> ok_or({:ok, 123}, :default_error)
       {:ok, 123}
       
@@ -269,17 +271,16 @@ defmodule Arrows do
       iex> ok_or(123, :default_error)
       {:ok, 123}
   """
-  def ok_or(x={:ok, _}, _), do: x
-  def ok_or(x={:error, _}, _), do: x
+  def ok_or(x = {:ok, _}, _), do: x
+  def ok_or(x = {:error, _}, _), do: x
   def ok_or(:error, _), do: :error
   def ok_or(nil, err), do: {:error, err}
   def ok_or(ok, _), do: {:ok, ok}
 
-
   defp ellipsis(l, arg) do
     Macro.prewalk(arg, 0, fn form, acc ->
       case form do
-        {:..., _, ctx} when is_atom(ctx) or ctx == [] -> {l, acc+1}
+        {:..., _, ctx} when is_atom(ctx) or ctx == [] -> {l, acc + 1}
         _ -> {form, acc}
       end
     end)
@@ -294,18 +295,21 @@ defmodule Arrows do
 
   defp pipe(where, kind, l, r) do
     v = Macro.var(:ret, __MODULE__)
+
     case r do
       {name, meta, args} ->
         args = if(is_list(args), do: args, else: [])
         continue = {name, meta, pipe_args(where, v, args)}
+
         case kind do
           :normal ->
-            quote [generated: true] do
+            quote generated: true do
               unquote(v) = unquote(l)
               unquote(continue)
             end
+
           :ok ->
-            quote [generated: true] do
+            quote generated: true do
               case unquote(l) do
                 nil -> nil
                 :error -> :error
@@ -315,18 +319,23 @@ defmodule Arrows do
               end
             end
         end
+
       _ ->
         case ellipsis(l, r) do
-          {arg, 0} -> raise RuntimeError, message: "Can't pipe into #{inspect(r)}: missing ellipsis(`...`) in #{inspect(arg)}"
+          {arg, 0} ->
+            raise RuntimeError,
+              message: "Can't pipe into #{inspect(r)}: missing ellipsis(`...`) in #{inspect(arg)}"
+
           {continue, _} ->
             case kind do
               :normal ->
-                quote [generated: true] do
+                quote generated: true do
                   unquote(v) = unquote(l)
                   unquote(continue)
                 end
+
               :ok ->
-                quote [generated: true] do
+                quote generated: true do
                   case unquote(l) do
                     nil -> nil
                     :error -> :error
@@ -342,14 +351,16 @@ defmodule Arrows do
 
   defp join(kind, l, r) do
     v = Macro.var(:l, __MODULE__)
+
     case kind do
       :normal ->
-        quote [generated: true] do
+        quote generated: true do
           unquote(v) = unquote(l)
           if is_nil(unquote(v)), do: unquote(r), else: unquote(v)
         end
+
       :ok ->
-        quote [generated: true] do
+        quote generated: true do
           case unquote(l) do
             nil -> unquote(r)
             :error -> unquote(r)
@@ -359,5 +370,4 @@ defmodule Arrows do
         end
     end
   end
-
 end
