@@ -83,9 +83,9 @@ defmodule Arrows do
       iex> {:error, :reason} ~> Integer.to_string()
       {:error, :reason}
       
-      # Note that this would pass :error to `String.pad_leading` breaking our pipe: 
+      # Note that the following would pass :error to `String.pad_leading` breaking our pipe: 
       # :error ~> Integer.to_string() |> String.pad_leading(2, "0")
-      :error
+      
       # Instead we want to do:
       iex> :error ~> Integer.to_string() ~> String.pad_leading(2, "0")
       :error
