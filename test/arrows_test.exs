@@ -1,4 +1,4 @@
-defmodule ArrowsTest do
+defmodule Arrows.Test do
   use ExUnit.Case
   use Arrows
 

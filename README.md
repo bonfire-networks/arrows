@@ -25,42 +25,32 @@ end
 
 ## Documentation
 
-The Elixir [|> ("pipe") operator](https://hexdocs.pm/elixir/Kernel.html#%7C%3E/2) is one of the things that seems to get people excited about elixir. Probably in part because you then don't have to keep coming up with function names. Unfortunately it's kind of limiting. 
-The moment you need to pipe a parameter into a position that isn't the first one, it breaks down and you have to drop out of the pipeline format or write a secondary function to handle it.
+The Elixir `|>` [("pipe") operator](https://hexdocs.pm/elixir/Kernel.html#%7C%3E/2) is one of the things that seems to get people excited about elixir. Probably in part because you then don't have to keep coming up with function names. Unfortunately it's kind of limiting. The moment you need to pipe a parameter into a position that isn't the first one, it breaks down and you have to drop out of the pipeline format or write a secondary function to handle it.
 
 Not any more! By simply inserting `...` where you would like the value to be inserted, `Arrows` will override where it is placed. This allows you to keep on piping while accommodating that function with the annoying argument order. `Arrows` was inspired by [an existing library](https://hexdocs.pm/magritte/Magritte.html). 
 
-Here is part of the test suite in lieu of examples:
+## Examples
 
-```elixir
-defmodule ArrowsTest do
-  use ExUnit.Case
-  use Arrows
+    # Standard first position pipe
+    iex> 2 |> Integer.to_string()
+    "2"
+    
+    # Using ellipsis for explicit placement
+    iex> 2 |> Integer.to_string(...)
+    "2"
+    
+    # Using ellipsis to place the piped value in a non-first position
+    iex> 3 |> String.pad_leading("2", ..., "0")
+    "002"
+    
+    # Using the ellipsis multiple times
+    iex> 2 |> Kernel.==(..., ...)
+    true
+    
+    # Nested expressions with ellipsis
+    iex> 2 |> String.pad_leading(Integer.to_string(...), 3, "0")
+    "002"
 
-  def double(x), do: x * 2
-  def double_fst(x, _), do: x * 2
-  def double_snd(_, x), do: x * 2
-  def add_snd_thd(_, x, y), do: x + y
-
-  test "|>" do
-    assert 4 == (2 |> double)
-    assert 4 == (2 |> double())
-    assert 4 == (2 |> double(...))
-    assert 8 == (2 |> double(double(...)))
-    assert 4 == (2 |> double_fst(1))
-    assert 4 == (2 |> double_fst(..., 1))
-    assert 8 == (2 |> double_fst(double(...), 1))
-    assert 4 == (2 |> double_snd(1, ...))
-    assert 8 == (2 |> double_snd(1, double(...)))
-    assert 3 == (2 |> add_snd_thd(1, ..., 1))
-    assert 4 == (2 |> add_snd_thd(1, ..., ...))
-    assert 6 == (2 |> add_snd_thd(1, ..., double(...)))
-    for x <- [:yes, 2, nil, false] do
-      assert {:ok, x} == (x |> {:ok, ...})
-    end
-  end
-end
-```
 
 A few little extra features you might notice here:
 * You can move the parameter into a subexpression, as in `2 |> double_fst(double(...), 1)` where
