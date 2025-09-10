@@ -12,7 +12,6 @@ defmodule Arrows do
           ~>: 2,
           <~>: 2,
           ok: 1,
-          to_ok: 1,
           from_ok: 1
         ]
     end
@@ -155,47 +154,14 @@ defmodule Arrows do
   """
   defmacro l <~> r, do: join(:ok, l, r)
 
-  @doc """
-  Converts various values to an OK tuple format.
-
-  - `{:ok, value}` and `{:error, reason}` are returned unchanged
-  - `:error` is returned unchanged
-  - `nil` is converted to `:error`
-  - Any other value `x` is converted to `{:ok, x}`
-
-  ## Examples
-
-      iex> to_ok({:ok, 123})
-      {:ok, 123}
-      
-      iex> to_ok({:error, :reason})
-      {:error, :reason}
-      
-      iex> to_ok(:error)
-      :error
-      
-      iex> to_ok(nil)
-      :error
-      
-      iex> to_ok(123)
-      {:ok, 123}
-  """
-  def to_ok(x) do
-    case x do
-      {:ok, _} -> x
-      {:error, _} -> x
-      :error -> :error
-      nil -> :error
-      x -> {:ok, x}
-    end
-  end
 
   @doc """
   Extracts values from OK tuples.
 
   - `{:ok, value}` returns `value`
-  - `{:error, _}` returns `nil`
-  - `:error` returns `nil`
+  - `{:error, _}` returns `false`
+  - `:ok` returns `true`
+  - `:error` returns `false`
   - Any other value is returned unchanged
 
   ## Examples
@@ -204,29 +170,79 @@ defmodule Arrows do
       123
       
       iex> from_ok({:error, :reason})
-      nil
+      false
       
       iex> from_ok(:error)
-      nil
+      false
       
       iex> from_ok(123)
       123
+
+      iex> from_ok({:ok, 42})
+      42
+
+      iex> from_ok(:ok)
+      true
+
+      iex> from_ok(:ok, default_value: "all ok")
+      "all ok"
+
+      iex> from_ok({:error, "something went wrong"}, on_error: "error msg")
+      "error msg"
+
+      iex> from_ok(:error, on_error: "error msg")
+      "error msg"
+
+      iex> from_ok(nil, on_error: "error msg")
+      nil
   """
-  def from_ok(x) do
+  def from_ok(x, opts \\ [default_value: true, on_error: false]) do
     case x do
       {:ok, x} -> x
-      {:error, _} -> nil
-      :error -> nil
+      :ok -> opts[:default_value]
+      {:error, _e} -> opts[:on_error]
+      :error -> opts[:on_error]
       # lenience
       x -> x
     end
   end
 
-  @doc """
-  Wraps a value in an OK tuple if it's not already in a result tuple format.
+  # def from_ok(val, fallback \\ nil)
+  # def from_ok({:ok, val}, _fallback), do: val
+  # def from_ok({:error, _val}, fallback), do: fallback
+  # def from_ok(:error, fallback), do: fallback
+  # def from_ok(val, fallback), do: val || fallback
 
-  - `{:ok, value}`, `{:error, reason}` and `:error` are returned unchanged
-  - Any other value `x` is converted to `{:ok, x}`
+
+
+   @doc """
+
+  Unwraps an `{:ok, val}` tuple, returning the value. If not OK, returns a fallback value (default is `nil`).
+
+  ## Parameters
+
+    - `val`: The value or tuple to unwrap.
+    - `fallback`: The fallback value if the tuple is an error.
+
+  ## Examples
+
+
+  """
+  # def from_ok(val, fallback \\ nil)
+  # def from_ok({:ok, val}, _fallback), do: val
+
+  # def from_ok({:error, val}, fallback) do
+  #   error(val)
+  #   fallback
+  # end
+
+  # def from_ok(:ok, fallback), do: fallback
+  # def from_ok(:error, fallback), do: fallback
+  # def from_ok(val, fallback), do: val || fallback
+
+
+  @doc """
+  Wraps a value in an OK tuple or returns an error tuple. Sets a default value or error when none is provided.
 
   ## Examples
 
@@ -236,46 +252,37 @@ defmodule Arrows do
       iex> ok({:error, :reason})
       {:error, :reason}
       
-      iex> ok(:error)
-      :error
-      
       iex> ok(123)
       {:ok, 123}
-  """
-  def ok(x = {:ok, _}), do: x
-  def ok(x = {:error, _}), do: x
-  def ok(:error), do: :error
-  def ok(x), do: {:ok, x}
 
-  @doc """
-  Wraps a value in an OK tuple or returns an error tuple with a default error.
-
-  - `{:ok, value}`, `{:error, reason}` and `:error` are returned unchanged
-  - `nil` returns `{:error, err}` where `err` is the default error provided in the second argument
-  - Any other value `x` returns `{:ok, x}`
-
-  ## Examples
-
-      iex> ok_or({:ok, 123}, :default_error)
+      iex> ok({:ok, 123}, default_error: "default error msg")
       {:ok, 123}
-      
-      iex> ok_or({:error, :reason}, :default_error)
+
+      iex> ok({:error, :reason}, default_error: "default error msg")
       {:error, :reason}
-      
-      iex> ok_or(:error, :default_error)
-      :error
-      
-      iex> ok_or(nil, :default_error)
-      {:error, :default_error}
-      
-      iex> ok_or(123, :default_error)
+
+      iex> ok(:error, default_error: "default error msg")
+      {:error, "default error msg"}
+
+      iex> ok(nil, default_error: "default error msg")
+      {:error, "default error msg"}
+
+      iex> ok(123, default_error: "default error msg")
       {:ok, 123}
+
+      iex> ok(:ok, default_value: "all ok")
+      {:ok, "all ok"}
   """
-  def ok_or(x = {:ok, _}, _), do: x
-  def ok_or(x = {:error, _}, _), do: x
-  def ok_or(:error, _), do: :error
-  def ok_or(nil, err), do: {:error, err}
-  def ok_or(ok, _), do: {:ok, ok}
+  def ok(x, opts \\ [default_value: true, default_error: nil]) do
+    case x do
+      {:ok, _} -> x
+      {:error, _} -> x
+      :error -> {:error, opts[:default_error]}
+      :ok -> {:ok, opts[:default_value]}
+      nil -> {:error, opts[:default_error]}
+      x -> {:ok, x}
+    end
+  end
 
   defp ellipsis(l, arg) do
     Macro.prewalk(arg, 0, fn form, acc ->
